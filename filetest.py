@@ -123,8 +123,59 @@ class Library:
             if valid:
                 self.filtered_inventory[i] = self.inventory[i]
 
+    def stats_tags(self, use_filter=False):
+        """
+        returns a dictionary with the keys being genre tags and the contents being an int indicating how many times that
+        genre tag appears
 
+        by default, this searches through inventory (every book kept in this library), setting use_filter to True makes
+        it search through the filtered inventory instead
+        """
+        tags = {}
+        if use_filter:
+            pool = self.filtered_inventory
+        else:
+            pool = self.inventory
+
+        for i in pool:
+            for j in pool[i].genre_tags:
+                if j not in tags:
+                    tags[j] = 1
+                else:
+                    tags[j] += 1
+        return tags
+
+    def stats_books(self, use_filter=False):
+        """
+        returns a dictionary with the keys being book titles and the contents being an int indicating how many times
+        that book appears
+
+        by default, this searches through inventory (every book kept in this library), setting use_filter to True makes
+        it search through the filtered inventory instead
+        """
+        books = {}
+        if use_filter:
+            pool = self.filtered_inventory
+        else:
+            pool = self.inventory
+
+        for i in pool:
+            if pool[i].name not in books:
+                books[pool[i].name] = 1
+            else:
+                books[pool[i].name] += 1
+        return books
+
+    def stats_book_count(self, use_filter=False):
+        """
+        returns total number of books
+
+        by default, this searches through inventory (every book kept in this library), setting use_filter to True makes
+        it search through the filtered inventory instead
+        """
+        if use_filter:
+            return len(self.filtered_inventory)
+        else:
+            return len(self.inventory)
 
 l = Library("books")
-l.apply_filter(genre_tags=["fantasy"])
-l.print_filtered_books()
