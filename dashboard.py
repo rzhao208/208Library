@@ -26,7 +26,7 @@ class App(Tk):
         # create an empty dict to store all frames
         self.frames = {}
 
-        for F in (Dashboard, AddBookPage, ViewInventoryPage):
+        for F in (Dashboard, AddBookPage, ViewInventoryPage, ViewStatisticsPage):
             frame = F(container, self) # ex. frame = Dashboard(container, self), where container is the parent and self is App
             self.frames[F] = frame
 
@@ -75,7 +75,12 @@ class Dashboard(Frame):
 
         # 'view inventory' button
         self.button2 = Button(self, text='View Inventory', bg='dark sea green', font=('Courier', 16, "bold"), relief='raised', command= lambda: controller.show_frame(ViewInventoryPage))
-        self.button2.grid(row=6, column=0, sticky='w', padx=10, pady=20)
+        self.button2.grid(row=6, column=0, sticky='w', padx=10, pady=10)
+
+        # 'view statistics' button
+        self.button2 = Button(self, text='View Statistics', bg='dark sea green', font=('Courier', 16, "bold"),
+                              relief='raised', command=lambda: controller.show_frame(ViewStatisticsPage))
+        self.button2.grid(row=7, column=0, sticky='w', padx=10, pady=10)
 
 
 class AddBookPage(Frame):
@@ -107,6 +112,19 @@ class ViewInventoryPage(Frame):
                               borderwidth=2, relief='ridge', command=lambda: controller.show_frame(Dashboard))
         self.button1.grid(row=0, column=0, sticky="se", padx=10, pady=10)
 
+class ViewStatisticsPage(Frame):
+    def __init__(self, parent, controller):
+        super().__init__(parent)
+
+        self.controller = controller
+
+        self.grid_rowconfigure(0, weight=1)
+        self.grid_columnconfigure(0, weight=1)
+
+        # create a button to go back to the home screen
+        self.button1 = Button(self, text='🏠︎Back to Dashboard', bg="lightblue", fg='black', font=("Courier", 10),
+                              borderwidth=2, relief='ridge', command=lambda: controller.show_frame(Dashboard))
+        self.button1.grid(row=0, column=0, sticky="se", padx=10, pady=10)
 
 
 
