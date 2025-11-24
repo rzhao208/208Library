@@ -75,12 +75,12 @@ class ViewInventoryPage(Frame):
         self.tree.grid(row=2, column=0, columnspan=4, padx=20, pady=15)
 
         add_btn = Button(
-            self,
-            text="Add Book",
-            font=("Courier", 12),
-            bg="#c7e6fa",
-            width=15,
-            command=lambda: controller.show_frame(AddBookPage)
+    self,
+    text="Add Book",
+    font=("Courier", 12),
+    bg="#c7e6fa",
+    width=15,
+    command=lambda: controller.show_frame("AddBookPage")
         )
         add_btn.grid(row=3, column=0, pady=25)
 
