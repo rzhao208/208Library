@@ -1,5 +1,9 @@
 
 from tkinter import *
+from filetest import Library
+
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,NavigationToolbar2Tk)
 
 # Class to handle frame switching mechanism
 
@@ -14,6 +18,11 @@ class App(Tk):
         # set the title and size of the window
         self.title("Library Inventory Manager")
         self.geometry("640x480")
+
+        # create an instance of the library persistant book database
+        # this is how we can attach the backend to the frontend
+        self.library = Library("books")
+
 
         # this is the main frame 'container' that holds all the frames
         container = Frame(self)
@@ -118,13 +127,27 @@ class ViewStatisticsPage(Frame):
 
         self.controller = controller
 
-        self.grid_rowconfigure(0, weight=1)
+        self.grid_rowconfigure(3, weight=1)
         self.grid_columnconfigure(0, weight=1)
 
         # create a button to go back to the home screen
         self.button1 = Button(self, text='🏠︎Back to Dashboard', bg="lightblue", fg='black', font=("Courier", 10),
                               borderwidth=2, relief='ridge', command=lambda: controller.show_frame(Dashboard))
-        self.button1.grid(row=0, column=0, sticky="se", padx=10, pady=10)
+        self.button1.grid(row=3, column=0, sticky="se", padx=10, pady=10)
+
+        # create a title label for the page
+        self.label1 = Label(self, text="Library Inventory Statistics",bg="lightblue", fg='black', font=("Courier", 14), borderwidth=2, relief='ridge')
+        self.label1.grid(row=0, column=0, sticky="n", pady=20)
+
+        # create a display of the total book count in the inventory
+
+        # first, retrieve the total book count from the backend, store in a variable
+        total_books = self.controller.library.stats_book_count()
+
+        # then, create a label to show the integer of total books
+        self.label2 = Label(self, text='Total Inventory:' + str(total_books), font=("Courier", 14), bg="white")
+        self.label2.grid(row=1, column=0, sticky="w", padx=20)
+
 
 
 
