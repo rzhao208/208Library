@@ -1,30 +1,30 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
+import subprocess
+import sys
+import os
 
 
 class ViewInventoryScreen(tk.Frame):
     def __init__(self, parent):
         super().__init__(parent, bg="white")
 
-
-        # GRID CONFIGURATION
+       
         self.grid_rowconfigure(3, weight=1)
         self.grid_columnconfigure(0, weight=1)
 
-
-        # BACK BUTTON
+ 
         self.back_btn = tk.Button(
             self,
             text="🏠︎ Back to Dashboard",
             bg="lightblue", fg="black",
             font=("Courier", 10),
             borderwidth=2, relief="ridge",
-            command=lambda: print("Back to dashboard triggered")
+            command=self.open_dashboard
         )
         self.back_btn.grid(row=0, column=0, sticky="ne", padx=10, pady=10)
 
-
-        # TITLE BAR
+       
         self.title_label = tk.Label(
             self,
             text="Library Inventory",
@@ -35,7 +35,7 @@ class ViewInventoryScreen(tk.Frame):
         )
         self.title_label.grid(row=1, column=0, sticky="n", pady=10)
 
-        # SEARCH BAR
+       
         search_frame = tk.Frame(self, bg="white")
         search_frame.grid(row=2, column=0, sticky="n", pady=5)
 
@@ -67,8 +67,7 @@ class ViewInventoryScreen(tk.Frame):
             command=self.clear_search
         ).grid(row=0, column=3, padx=5)
 
-   
-        # TREEVIEW (Table)
+    
         tree_frame = tk.Frame(self, bg="white")
         tree_frame.grid(row=3, column=0, sticky="n", pady=10)
 
@@ -85,7 +84,7 @@ class ViewInventoryScreen(tk.Frame):
         self.tree.grid(row=0, column=0)
         scrollbar.grid(row=0, column=1, sticky="ns")
 
-        # BUTTON SECTION (Bottom)
+    
         btn_frame = tk.Frame(self, bg="white")
         btn_frame.grid(row=4, column=0, pady=20)
 
@@ -96,26 +95,31 @@ class ViewInventoryScreen(tk.Frame):
             borderwidth=0,
             relief="flat",
             width=15
-            )
-
+        )
 
         tk.Button(btn_frame, text="Add Book", command=self.add_book_form, **button_style)\
             .grid(row=0, column=0, padx=10)
-        
+
         tk.Button(btn_frame, text="Edit Selected", command=self.edit_selected_form, **button_style)\
             .grid(row=0, column=1, padx=10)
-        
+
         tk.Button(btn_frame, text="Delete Selected", command=self.delete_selected, **button_style)\
             .grid(row=0, column=2, padx=10)
-        
-        tk.Button(btn_frame, text="Return", command=lambda: print("Return pressed"), **button_style)\
+
+        tk.Button(btn_frame, text="Return", command=self.open_dashboard, **button_style)\
             .grid(row=0, column=3, padx=10)
 
-
-        # Load sample data for testing
+        # Load sample data
         self.load_data()
 
-    # DATA LOAD
+  
+    def open_dashboard(self):
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        dashboard_path = os.path.join(current_dir, "dashboard.py")
+
+        subprocess.Popen([sys.executable, dashboard_path])
+        self.master.destroy()
+
     def load_data(self):
         sample = [
             ("Harry Potter", "J.K. Rowling", "1997", "Fantasy"),
@@ -125,7 +129,7 @@ class ViewInventoryScreen(tk.Frame):
         for row in sample:
             self.tree.insert("", "end", values=row)
 
-    # SEARCH FUNCTIONS
+  
     def search_items(self):
         query = self.search_var.get().lower()
         for item in self.tree.get_children():
@@ -141,7 +145,7 @@ class ViewInventoryScreen(tk.Frame):
             self.tree.item(i, tags="")
         self.tree.tag_configure("", background="white")
 
-    # ADD BOOK FORM
+ 
     def add_book_form(self):
         form = tk.Toplevel(self)
         form.title("Add Book")
@@ -175,7 +179,7 @@ class ViewInventoryScreen(tk.Frame):
             command=save
         ).grid(row=len(fields), column=0, columnspan=2, pady=15)
 
-    # EDIT BOOK FORM
+
     def edit_selected_form(self):
         sel = self.tree.selection()
         if not sel:
@@ -217,7 +221,7 @@ class ViewInventoryScreen(tk.Frame):
             command=save
         ).grid(row=len(fields), column=0, columnspan=2, pady=15)
 
-    # DELETE SELECTED
+ 
     def delete_selected(self):
         sel = self.tree.selection()
         if not sel:
@@ -227,7 +231,6 @@ class ViewInventoryScreen(tk.Frame):
         if messagebox.askyesno("Confirm Delete", "Are you sure you want to delete this book?"):
             self.tree.delete(sel[0])
 
-# RUN ALONE
 if __name__ == "__main__":
     root = tk.Tk()
     root.title("Inventory Test Window")
