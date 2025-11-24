@@ -3,16 +3,7 @@ from tkinter import ttk, messagebox
 from tkinter import Frame
 
 class ViewInventoryPage(Frame):
-    """
-    Inventory viewer for the library app.
-    Notes:
-      - Expects controller.library.stats_inventory() to return a list of either:
-          * objects with a get_stats() method returning a dict, OR
-          * dicts with keys like "ID"/"id", "name"/"title", "author", "publish_date"/"publish_year",
-            and "genre_tags"/"genres".
-      - For update/delete operations, best-effort calls are made to the controller.library API
-        (update/delete methods are attempted if present).
-    """
+ 
 
     def __init__(self, parent, controller):
         super().__init__(parent, bg="white")
