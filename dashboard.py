@@ -2,6 +2,8 @@ from tkinter import messagebox
 from tkinter import *
 from filetest import Library
 
+from ViewInventory import ViewInventoryPage
+
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,NavigationToolbar2Tk)
 
@@ -43,17 +45,24 @@ class App(Tk):
 
         for F in (Dashboard, AddBookPage, ViewInventoryPage, ViewStatisticsPage):
             frame = F(container, self) # ex. frame = Dashboard(container, self), where container is the parent and self is App
-            self.frames[F] = frame
+
+            # before, we used the class object like Dashboard, AddBookPage as the key, ex. self.frames[F] = frame
+            # but this required importing Dashboard and AddBookPage in ViewInventory.py
+            # which created a circular import since we also import ViewInventoryPage in this file
+            # so, to avoid the circular import, we use F.__name__ to call the actual instances of the frames, and it stores the class name as a string
+            # ex. If F = Dashboard, F.name = "Dashboard"
+            # so for the callbacks, we can just refer to the frames using strings, ex. "Dashboard", and require no importing
+            self.frames[F.__name__] = frame
 
             # the children frames use grid so we can stack them and raise them accordingly
             frame.grid(row=0, column=0, sticky="nsew")
 
         # show the Dashboard page initially
-        self.show_frame(Dashboard)
+        self.show_frame("Dashboard")
 
     # this is the function we will call using lambda under each button to switch the frame accordingly
-    def show_frame(self, screen):
-        frame = self.frames[screen]
+    def show_frame(self, name):
+        frame = self.frames[name]
         frame.tkraise()
 
 
@@ -85,16 +94,16 @@ class Dashboard(Frame):
         # the buttons will use callback functions to open the superimposed frames
 
         # 'add book' button
-        self.button1 = Button(self, text='Add New Book', bg='dark sea green', font=('Courier', 16, "bold"), command= lambda: controller.show_frame(AddBookPage))
+        self.button1 = Button(self, text='Add New Book', bg='dark sea green', font=('Courier', 16, "bold"), command= lambda: controller.show_frame("AddBookPage"))
         self.button1.grid(row=5, column=0, sticky='w', padx=10, pady=5)
 
         # 'view inventory' button
-        self.button2 = Button(self, text='View Inventory', bg='dark sea green', font=('Courier', 16, "bold"), relief='raised', command= lambda: controller.show_frame(ViewInventoryPage))
+        self.button2 = Button(self, text='View Inventory', bg='dark sea green', font=('Courier', 16, "bold"), relief='raised', command= lambda: controller.show_frame("ViewInventoryPage"))
         self.button2.grid(row=6, column=0, sticky='w', padx=10, pady=10)
 
         # 'view statistics' button
         self.button2 = Button(self, text='View Statistics', bg='dark sea green', font=('Courier', 16, "bold"),
-                              relief='raised', command=lambda: controller.show_frame(ViewStatisticsPage))
+                              relief='raised', command=lambda: controller.show_frame("ViewStatisticsPage"))
         self.button2.grid(row=7, column=0, sticky='w', padx=10, pady=10)
 
 
@@ -188,19 +197,19 @@ class AddBookPage(Frame):
         # Clear fields 
         self.clear_fields()
 
-class ViewInventoryPage(Frame):
-    def __init__(self, parent, controller):
-        super().__init__(parent)
-
-        self.controller = controller
-
-        self.grid_rowconfigure(0, weight=1)
-        self.grid_columnconfigure(0, weight=1)
-
-        # create a button to go back to the home screen
-        self.button1 = Button(self, text='🏠︎Back to Dashboard', bg="lightblue", fg='black', font=("Courier", 10),
-                              borderwidth=2, relief='ridge', command=lambda: controller.show_frame(Dashboard))
-        self.button1.grid(row=0, column=0, sticky="se", padx=10, pady=10)
+# class ViewInventoryPage(Frame):
+#     def __init__(self, parent, controller):
+#         super().__init__(parent)
+#
+#         self.controller = controller
+#
+#         self.grid_rowconfigure(0, weight=1)
+#         self.grid_columnconfigure(0, weight=1)
+#
+#         # create a button to go back to the home screen
+#         self.button1 = Button(self, text='🏠︎Back to Dashboard', bg="lightblue", fg='black', font=("Courier", 10),
+#                               borderwidth=2, relief='ridge', command=lambda: controller.show_frame(Dashboard))
+#         self.button1.grid(row=0, column=0, sticky="se", padx=10, pady=10)
 
 class ViewStatisticsPage(Frame):
     def __init__(self, parent, controller):
@@ -213,7 +222,7 @@ class ViewStatisticsPage(Frame):
 
         # create a button to go back to the home screen
         self.button1 = Button(self, text='🏠︎Back to Dashboard', bg="lightblue", fg='black', font=("Courier", 10),
-                              borderwidth=2, relief='ridge', command=lambda: controller.show_frame(Dashboard))
+                              borderwidth=2, relief='ridge', command=lambda: controller.show_frame("Dashboard"))
         self.button1.grid(row=3, column=0, sticky="se", padx=10, pady=10)
 
         # create a title label for the page

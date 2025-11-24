@@ -104,15 +104,9 @@ class ViewInventoryPage(Frame):
         )
         delete_btn.grid(row=3, column=2, pady=25)
 
-        return_btn = Button(
-            self,
-            text="Return",
-            font=("Courier", 12),
-            bg="#c7e6fa",
-            width=15,
-            command=lambda: controller.show_frame(Dashboard)
-        )
-        return_btn.grid(row=3, column=3, pady=25)
+        # create a button to go back to the home screen
+        self.button1 = Button(self, text='🏠︎Back to Dashboard', bg="lightblue", fg='black', font=("Courier", 10),borderwidth=2, relief='ridge', command=lambda: controller.show_frame("Dashboard"))
+        self.button1.grid(row=0, column=0, sticky="se", padx=10, pady=10)
 
         # Load backend data
         self.load_data()
@@ -167,7 +161,7 @@ class ViewInventoryPage(Frame):
             except Exception:
                 books = []
 
-        for book in books:
+        for book_id, book in books.items():
             normalized = self._normalize_stats(book)
             if not normalized:
                 continue
@@ -197,8 +191,8 @@ class ViewInventoryPage(Frame):
                 books = []
 
         filtered = []
-        for b in books:
-            normalized = self._normalize_stats(b)
+        for book_id, book_obj in books.items():
+            normalized = self._normalize_stats(book_obj)
             if not normalized:
                 continue
             combined = " ".join([
