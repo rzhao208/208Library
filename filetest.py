@@ -177,5 +177,3 @@ class Library:
             return len(self.filtered_inventory)
         else:
             return len(self.inventory)
-
-l = Library("books")
