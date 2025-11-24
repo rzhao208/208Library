@@ -177,3 +177,27 @@ class Library:
             return len(self.filtered_inventory)
         else:
             return len(self.inventory)
+
+    def create_sample(self):
+        """
+        creates a small sample of books based on wikipedia's all-time best-selling books section
+        """
+        self.add_book("A Tale of Two Cities", "Charles Dickens", 1859, 200, ["historical fiction"])
+        self.add_book("The Little Prince", "Antoine de Saint-Exupery", 1943, 200, ["fantasy"])
+        self.add_book("The Alchemist", "Paulo Coelho", 1988, 150, ["fantasy"])
+        self.add_book("Harry Potter and the Philosopher's Stone", "J. K. Rowling", 1997, 120, ["fantasy"])
+        self.add_book("And Then There Were None", "Agatha Christie", 1939, 100, ["mystery"])
+        self.add_book("Dream of the Red Chamber", "Cao Xueqin", 1791, 100, ["family saga"])
+        self.add_book("The Hobbit", "J. R. R. Tolkien", 1937, 100, ["fantasy", "children's fiction"])
+        self.add_book("Alice's Adventures in Wonderland", "Lewis Carroll", 1865, 100, ["fantasy", "absurdist fiction"])
+
+    def delete_all_books(self):
+        """
+        deletes all books
+        """
+        temp = dict(self.inventory)
+        for i in temp:
+            self.delete_book(i)
+
+
+
