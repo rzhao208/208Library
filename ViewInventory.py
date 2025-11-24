@@ -9,20 +9,17 @@ class ViewInventoryPage(Frame):
 
         self.controller = controller
 
- 
-
         title_label = Label(
             self,
             text="Library Inventory",
             font=("Courier", 18, "bold"),
-            bg="#c7e6fa",       # light blue
+            bg="#c7e6fa",
             width=22,
             height=2,
             relief="ridge"
         )
         title_label.grid(row=0, column=0, columnspan=4, pady=15)
 
-   
         Label(self, text="Search:", font=("Courier", 12), bg="white") \
             .grid(row=1, column=0, sticky="e", padx=8)
 
@@ -47,7 +44,6 @@ class ViewInventoryPage(Frame):
         )
         clear_btn.grid(row=1, column=3, padx=5)
 
-  
         columns = ("Title", "Author", "Year", "Genre")
         self.tree = ttk.Treeview(
             self,
@@ -74,7 +70,6 @@ class ViewInventoryPage(Frame):
 
         self.tree.grid(row=2, column=0, columnspan=4, padx=20, pady=15)
 
-   
         add_btn = Button(
             self,
             text="Add Book",
@@ -90,7 +85,8 @@ class ViewInventoryPage(Frame):
             text="Edit Selected",
             font=("Courier", 12),
             bg="#c7e6fa",
-            width=15
+            width=15,
+            command=self.edit_selected
         )
         edit_btn.grid(row=3, column=1, pady=25)
 
@@ -114,10 +110,9 @@ class ViewInventoryPage(Frame):
         )
         return_btn.grid(row=3, column=3, pady=25)
 
-        # Load backend data
         self.load_data()
 
-     def load_data(self):
+    def load_data(self):
         for row in self.tree.get_children():
             self.tree.delete(row)
 
@@ -125,13 +120,12 @@ class ViewInventoryPage(Frame):
 
         for book in books:
             stats = book.get_stats()
-            ID = stats["ID"]
             title = stats["name"]
             author = stats["author"]
             year = stats["publish_date"]
             genres = stats["genre_tags"]
 
-            self.tree.insert("", "end", values=(ID, title, author, year, genres))
+            self.tree.insert("", "end", values=(title, author, year, genres))
 
 
     def search_book(self):
@@ -181,3 +175,13 @@ class ViewInventoryPage(Frame):
         messagebox.showinfo("Deleted", f"'{book_title}' was removed from inventory.")
 
         self.load_data()
+
+    def edit_selected(self):
+        selected = self.tree.selection()
+        if not selected:
+            messagebox.showwarning("Warning", "Please select a book to edit.")
+            return
+
+        values = self.tree.item(selected[0], "values")
+        book_title = values[0]
+        messagebox.showinfo("Edit", f"Placeholder: Opening edit page for '{book_title}'")
