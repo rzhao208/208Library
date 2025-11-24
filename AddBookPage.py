@@ -1,6 +1,6 @@
-
 class AddBookPage(Frame):
-  super().__init__(parent, bg="#f3e8ff")  # light purple
+    def __init__(self, parent, controller):
+        super().__init__(parent, bg="#f3e8ff")  # light purple
 
         self.controller = controller
 
@@ -32,7 +32,7 @@ class AddBookPage(Frame):
         self.genre_entry = Entry(self, width=40)
         self.genre_entry.grid(row=5, column=1)
 
-        # save Button
+        # Save Button
         Button(self, text="Save", bg="lightgreen",
                command=self.save_book).grid(row=6, column=0, pady=20)
 
@@ -40,9 +40,10 @@ class AddBookPage(Frame):
         Button(self, text="Cancel", bg="red",
                command=self.confirm_cancel).grid(row=6, column=1, pady=20)
 
-        # return button
+        # Return button
         Button(self, text="Return", bg="lightblue",
                command=self.confirm_return).grid(row=7, column=0, columnspan=2, pady=10)
+
 
     # Clear all fields
     def clear_fields(self):
@@ -52,13 +53,13 @@ class AddBookPage(Frame):
         self.cost_entry.delete(0, END)
         self.genre_entry.delete(0, END)
 
-    # Asks whether they are sure they want to cancel
+    # Confirm cancel
     def confirm_cancel(self):
         answer = messagebox.askyesno("Confirm Cancel", "Are you sure you want to cancel?")
         if answer:
             self.clear_fields()
 
-    # Asks whether they are sure they want to return
+    # Confirm return to dashboard
     def confirm_return(self):
         answer = messagebox.askyesno("Confirm Return", "Are you sure you want to return?")
         if answer:
@@ -72,24 +73,17 @@ class AddBookPage(Frame):
         cost = self.cost_entry.get().strip()
         genre = self.genre_entry.get().strip()
 
+        # Required fields
         if not title or not author:
             messagebox.showerror("Error", "Title and Author are required! Please enter them and try again.")
             return
 
         genre_list = [genre] if genre else []
 
+        # Save to backend
         self.controller.library.add_book(title, author, publish, cost, genre_list)
 
-        messagebox.showinfo("Success", "Book saved!")
+        messagebox.showinfo("Success", "Book saved successfully!")
+
+        # Clear ONLY fields (not layout)
         self.clear_fields()
-
-        # Row/column expansion
-        self.grid_rowconfigure(0, weight=1)
-        self.grid_columnconfigure(0, weight=1)
-
-        # Back to Dashboard button
-        self.button1 = Button(self, text='🏠︎Back to Dashboard', bg="lightblue", fg='black',
-                              font=("Courier", 10), borderwidth=2, relief='ridge',
-                              command=lambda: self.controller.show_frame(Dashboard))
-        self.button1.grid(row=0, column=0, sticky="se", padx=10, pady=10)
-  
