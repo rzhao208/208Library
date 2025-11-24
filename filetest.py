@@ -33,6 +33,16 @@ class Book:
         return (f"ID: {self.ID}, {self.name} by {self.author}. Published in {self.publish_date} and costs {self.cost}."
                 f"It is in the {self.genre_tags} genre(s)")
 
+    def get_stats(self):
+        stats = {}
+        stats["name"] = self.name
+        stats["author"] = self.author
+        stats["publish_date"] = self.publish_date
+        stats["cost"] = self.cost
+        stats["ID"] = self.ID
+        stats["genre_tags"] = self.genre_tags
+        return stats
+
 
 class Library:
     def __init__(self, file_name):
@@ -209,9 +219,5 @@ class Library:
         temp = dict(self.inventory)
         for i in temp:
             self.delete_book(i)
-
-
-l = Library("books")
-l.print_books()
 
 
