@@ -166,6 +166,62 @@ class ViewInventoryPage(Frame):
                 )
             )
 
+    def search_items(self):
+        query = self.search_var.get().lower()
+        for item in self.tree.get_children():
+            values = " ".join(str(v).lower() for v in self.tree.item(item)["values"])
+            self.tree.item(item, tags=("match" if query in values else "nomatch"))
+
+        self.tree.tag_configure("match", background="white")
+        self.tree.tag_configure("nomatch", background="#E8E8E8")
+
+    def clear_search(self):
+        self.search_var.set("")
+        for i in self.tree.get_children():
+            self.tree.item(i, tags="")
+        self.tree.tag_configure("", background="white")
+
+    def edit_selected_form(self):
+        sel = self.tree.selection()
+        if not sel:
+            messagebox.showwarning("No selection", "Select a book to edit.")
+            return
+
+        old_values = self.tree.item(sel[0])["values"]
+
+        form = tk.Toplevel(self)
+        form.title("Edit Book")
+        form.geometry("350x300")
+        form.config(bg="white")
+
+        fields = ["Title", "Author", "Year", "Genre"]
+        entries = {}
+
+        for i, field in enumerate(fields):
+            tk.Label(form, text=field + ":", bg="white", font=("Courier", 11))\
+                .grid(row=i, column=0, padx=10, pady=8, sticky="e")
+            entry = tk.Entry(form, font=("Courier", 11), width=25)
+            entry.insert(0, old_values[i])
+            entry.grid(row=i, column=1, pady=8)
+            entries[field] = entry
+
+        def save():
+            new_values = [entries[f].get() for f in fields]
+            if any(v == "" for v in new_values):
+                messagebox.showerror("Error", "All fields required.")
+                return
+
+            self.tree.item(sel[0], values=new_values)
+            form.destroy()
+
+        tk.Button(
+            form, text="Save Changes",
+            bg="lightblue", fg="black",
+            font=("Courier", 10),
+            borderwidth=2, relief="ridge",
+            command=save
+        ).grid(row=len(fields), column=0, columnspan=2, pady=15)
+
     def delete_selected(self):
         selected = self.tree.selection()
 
