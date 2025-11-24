@@ -166,6 +166,17 @@ class Library:
                 books[pool[i].name] += 1
         return books
 
+    def stats_inventory(self, use_filter=False):
+        """
+        returns the inventory
+
+        by default, this returns inventory (every book kept in this library), setting use_filter to True makes
+        it return the filtered inventory instead
+        """
+        if use_filter:
+            return self.filtered_inventory
+        return self.inventory
+
     def stats_book_count(self, use_filter=False):
         """
         returns total number of books
@@ -199,5 +210,8 @@ class Library:
         for i in temp:
             self.delete_book(i)
 
+
+l = Library("books")
+l.print_books()
 
 
