@@ -117,19 +117,21 @@ class ViewInventoryPage(Frame):
         # Load backend data
         self.load_data()
 
-    def load_data(self):
+     def load_data(self):
         for row in self.tree.get_children():
             self.tree.delete(row)
 
-        books = self.controller.library.stats_books()
+        books = self.controller.library.stats_inventory()
 
         for book in books:
-            title = book.get("title", "")
-            author = book.get("author", "")
-            year = book.get("publish_year", "")
-            genres = ", ".join(book.get("genres", []))
+            stats = book.get_stats()
+            ID = stats["ID"]
+            title = stats["name"]
+            author = stats["author"]
+            year = stats["publish_date"]
+            genres = stats["genre_tags"]
 
-            self.tree.insert("", "end", values=(title, author, year, genres))
+            self.tree.insert("", "end", values=(ID, title, author, year, genres))
 
 
     def search_book(self):
