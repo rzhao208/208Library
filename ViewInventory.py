@@ -29,16 +29,14 @@ class ViewInventoryPage(Frame):
         self.search_entry = Entry(self, width=45, font=("Courier", 12), bg="black", fg="white")
         self.search_entry.grid(row=1, column=1, padx=5)
 
-       def search_book(self):
-        keyword = self.search_entry.get().strip().lower()
-        for row in self.tree.get_children():
-            self.tree.delete(row)
-        for book in self.book_data:
-            if (keyword in book[0].lower() or
-                keyword in book[1].lower() or
-                keyword in book[2].lower() or
-                keyword in book[3].lower()):
-                self.tree.insert("", "end", values=book)
+        search_btn = Button(
+            self,
+            text="🔍",
+            font=("Courier", 12),
+            bg="#c7e6fa",
+            command=self.search_book
+        )
+        search_btn.grid(row=1, column=2, padx=5)
 
         clear_btn = Button(
             self,
@@ -87,51 +85,14 @@ class ViewInventoryPage(Frame):
         )
         add_btn.grid(row=3, column=0, pady=25)
 
-         def edit_selected(self):
-        selected = self.tree.selection()
-        if not selected:
-            messagebox.showwarning("Warning", "Please select a book to edit.")
-            return
-
-        values = self.tree.item(selected[0], "values")
-
-        edit_win = Toplevel(self)
-        edit_win.title("Edit Book")
-        edit_win.geometry("400x300")
-
-        Label(edit_win, text="Title").grid(row=0, column=0, padx=10, pady=10)
-        title_entry = Entry(edit_win)
-        title_entry.grid(row=0, column=1, padx=10)
-        title_entry.insert(0, values[0])
-
-        Label(edit_win, text="Author").grid(row=1, column=0, padx=10, pady=10)
-        author_entry = Entry(edit_win)
-        author_entry.grid(row=1, column=1, padx=10)
-        author_entry.insert(0, values[1])
-
-        Label(edit_win, text="Year").grid(row=2, column=0, padx=10, pady=10)
-        year_entry = Entry(edit_win)
-        year_entry.grid(row=2, column=1, padx=10)
-        year_entry.insert(0, values[2])
-
-        Label(edit_win, text="Genres").grid(row=3, column=0, padx=10, pady=10)
-        genre_entry = Entry(edit_win)
-        genre_entry.grid(row=3, column=1, padx=10)
-        genre_entry.insert(0, values[3])
-
-        def save_edits():
-            updated = (
-                title_entry.get(),
-                author_entry.get(),
-                year_entry.get(),
-                genre_entry.get()
-            )
-            idx = self.tree.index(selected[0])
-            self.book_data[idx] = updated
-            self.load_data()
-            edit_win.destroy()
-
-        Button(edit_win, text="Save", command=save_edits).grid(row=4, column=1, pady=20)
+        edit_btn = Button(
+            self,
+            text="Edit Selected",
+            font=("Courier", 12),
+            bg="#c7e6fa",
+            width=15
+        )
+        edit_btn.grid(row=3, column=1, pady=25)
 
         delete_btn = Button(
             self,
@@ -205,8 +166,9 @@ class ViewInventoryPage(Frame):
                 )
             )
 
-      def delete_selected(self):
+    def delete_selected(self):
         selected = self.tree.selection()
+
         if not selected:
             messagebox.showwarning("Warning", "Please select a book to delete.")
             return
@@ -214,17 +176,10 @@ class ViewInventoryPage(Frame):
         values = self.tree.item(selected[0], "values")
         book_title = values[0]
 
-        answer = simpledialog.askstring(
-            "Delete Book", 
-            "Enter the title of the book to confirm deletion:"
-        )
-        if answer == book_title:
-            idx = self.tree.index(selected[0])
-            del self.book_data[idx]
-            self.load_data()
-            messagebox.showinfo("Deleted", f"'{book_title}' was removed from inventory.")
-        else:
-            messagebox.showerror("Error", "Incorrect title, book not deleted.")
+        self.controller.library.delete_book(book_title)
 
-    self.load_data()
+        messagebox.showinfo("Deleted", f"'{book_title}' was removed from inventory.")
+
+        self.load_data()
+
 
