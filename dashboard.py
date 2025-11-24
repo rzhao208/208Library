@@ -153,6 +153,11 @@ class AddBookPage(Frame):
         Button(self, text="Return", bg="lightblue",
                command=self.confirm_return).grid(row=7, column=0, columnspan=2, pady=10)
 
+        # create a button to go back to the home screen
+        self.button1 = Button(self, text='🏠︎Back to Dashboard', bg="lightblue", fg='black', font=("Courier", 10),
+                              borderwidth=2, relief='ridge', command=lambda: controller.show_frame("Dashboard"))
+        self.button1.place(relx=1, rely=1, x=-10, y=-10, anchor='se')
+
 
     # Clear all fields
     def clear_fields(self):
@@ -237,6 +242,35 @@ class ViewStatisticsPage(Frame):
         # then, create a label to show the integer of total books
         self.label2 = Label(self, text='Total Inventory:' + str(total_books), font=("Courier", 14), bg="white")
         self.label2.grid(row=1, column=0, sticky="w", padx=20)
+
+        # create a chart for the most popular book genre, which updates based on the data
+
+        # retrieve the genre statistics dict from backend
+        genre_stats = controller.library.stats_tags()
+
+        # store keys and values in lists to be accessed by the x and y axes
+        genres = list(genre_stats.keys())
+        counts = list(genre_stats.values())
+
+        # create the figure
+        fig = Figure(figsize=(5,5))
+        chart = fig.add_subplot(111)
+
+        # fig.tight_layout() # ensures nothing gets cut out
+
+        # title and labels
+        chart.set_title('Book Genres by Popularity')
+        chart.bar(genres, counts)
+        chart.set_xlabel('Genres')
+        chart.set_ylabel('Count')
+        chart.tick_params(axis='x', labelsize=5)
+        chart.set_xticklabels(genres, rotation=45)
+
+        # embed the chart to tkinter
+        canvas = FigureCanvasTkAgg(fig, master=self)
+        canvas.draw()
+        canvas.get_tk_widget().grid(row=3, column=0, sticky='w', pady=10, padx=10)
+
 
 
 

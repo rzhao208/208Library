@@ -106,7 +106,8 @@ class ViewInventoryPage(Frame):
 
         # create a button to go back to the home screen
         self.button1 = Button(self, text='🏠︎Back to Dashboard', bg="lightblue", fg='black', font=("Courier", 10),borderwidth=2, relief='ridge', command=lambda: controller.show_frame("Dashboard"))
-        self.button1.grid(row=0, column=0, sticky="se", padx=10, pady=10)
+        # using place for the button ensures it is always in the correct position in the bottom right corner
+        self.button1.place(relx=1, rely=1, x=-10, y=-10, anchor='se')
 
         # Load backend data
         self.load_data()
