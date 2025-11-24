@@ -121,7 +121,7 @@ class ViewInventoryPage(Frame):
         for row in self.tree.get_children():
             self.tree.delete(row)
 
-        books = self.controller.library.get_all_books()
+        books = self.controller.library.stats_books()
 
         for book in books:
             title = book.get("title", "")
@@ -139,7 +139,7 @@ class ViewInventoryPage(Frame):
             self.load_data()
             return
 
-        books = self.controller.library.get_all_books()
+        books = self.controller.library.stats_books()
 
         filtered = [
             b for b in books
