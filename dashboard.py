@@ -23,6 +23,12 @@ class App(Tk):
         # this is how we can attach the backend to the frontend
         self.library = Library("books")
 
+        # after initializing the library, create the preset books once by calling create_sample()
+        # but only run this if the shelve database is currently empty
+
+        if self.library.stats_book_count() == 0:
+            self.library.create_sample()
+
 
         # this is the main frame 'container' that holds all the frames
         container = Frame(self)
