@@ -65,6 +65,14 @@ class App(Tk):
         frame = self.frames[name]
         frame.tkraise()
 
+        # must refresh the inventory page every time a new book is added/deleted/edited
+        if name == "ViewInventoryPage":
+            frame.load_data()
+
+        # refresh the total inventory count label automatically in the stats page
+        if name == "ViewStatisticsPage":
+            frame.label2.config(text="Total Inventory:" + str(self.library.stats_book_count()))
+
 
 # Dashboard UI Layout
 

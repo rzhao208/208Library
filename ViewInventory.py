@@ -124,7 +124,7 @@ class ViewInventoryPage(Frame):
             width=15,
             command=self.delete_selected
         )
-        delete_btn.grid(row=4, column=2, pady=25)
+        delete_btn.grid(row=4, column=2, pady=50)
 
         self.button1 = Button(
             self,
@@ -308,8 +308,9 @@ class ViewInventoryPage(Frame):
             return
 
         try:
-            if hasattr(self.controller.library, "delete_book_by_id"):
-                self.controller.library.delete_book_by_id(book_id)
+            # if hasattr(self.controller.library, "delete_book_by_id"):
+               #self.controller.library.delete_book_by_id(book_id)
+            self.controller.library.delete_book(book_id)
         except:
             messagebox.showwarning("Warning", "Backend delete failed.")
 
