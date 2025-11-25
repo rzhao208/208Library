@@ -3,24 +3,24 @@ from tkinter import ttk, messagebox
 from tkinter import Frame
 
 class ViewInventoryPage(Frame):
- 
-
     def __init__(self, parent, controller):
         super().__init__(parent, bg="white")
 
         self.controller = controller
 
+        # Title
         title_label = Label(
             self,
             text="Library Inventory",
             font=("Courier", 18, "bold"),
-            bg="#c7e6fa",       # light blue
+            bg="#c7e6fa",
             width=22,
             height=2,
             relief="ridge"
         )
-        title_label.grid(row=0, column=0, columnspan=4, pady=15)
+        title_label.grid(row=0, column=0, columnspan=5, pady=15)
 
+        # Search
         Label(self, text="Search:", font=("Courier", 12), bg="white") \
             .grid(row=1, column=0, sticky="e", padx=8)
 
@@ -45,15 +45,16 @@ class ViewInventoryPage(Frame):
         )
         clear_btn.grid(row=1, column=3, padx=5)
 
-        # Include ID column so inserted tuples match columns
-        columns = ("ID", "Title", "Author", "Year", "Genre")
+        # TABLE COLUMNS (with new COST column)
+        columns = ("ID", "Title", "Author", "Year", "Genre", "Cost")
+
         self.tree = ttk.Treeview(
             self,
             columns=columns,
-            show="headings",
-            height=15
+            show="headings"
         )
 
+        # TABLE STYLE (fix header text color)
         style = ttk.Style()
         style.configure("Treeview",
                         background="black",
@@ -61,26 +62,34 @@ class ViewInventoryPage(Frame):
                         fieldbackground="black",
                         rowheight=28,
                         font=("Courier", 12))
+
         style.configure("Treeview.Heading",
                         font=("Courier", 12, "bold"),
-                        background="black",
-                        foreground="white")
+                        background="#c7e6fa",
+                        foreground="black")   # <-- FIXED VISIBILITY
 
         for col in columns:
+            w = 70 if col == "ID" else 150
+            if col == "Cost":
+                w = 100
             self.tree.heading(col, text=col)
-            # adapt width for ID
-            w = 70 if col == "ID" else 180
             self.tree.column(col, width=w, anchor="center")
 
-        self.tree.grid(row=2, column=0, columnspan=4, padx=20, pady=15)
+        # Make table resizable
+        self.tree.grid(row=2, column=0, columnspan=5, padx=20, pady=15, sticky="nsew")
+        self.grid_rowconfigure(2, weight=1)
+        self.grid_columnconfigure(1, weight=1)
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_columnconfigure(2, weight=1)
 
+        # Buttons
         add_btn = Button(
-    self,
-    text="Add Book",
-    font=("Courier", 12),
-    bg="#c7e6fa",
-    width=15,
-    command=lambda: controller.show_frame("AddBookPage")
+            self,
+            text="Add Book",
+            font=("Courier", 12),
+            bg="#c7e6fa",
+            width=15,
+            command=lambda: (controller.show_frame("AddBookPage"), self.after(300, self.load_data))
         )
         add_btn.grid(row=3, column=0, pady=25)
 
@@ -104,75 +113,69 @@ class ViewInventoryPage(Frame):
         )
         delete_btn.grid(row=3, column=2, pady=25)
 
-        # create a button to go back to the home screen
-        self.button1 = Button(self, text='🏠︎Back to Dashboard', bg="lightblue", fg='black', font=("Courier", 10),borderwidth=2, relief='ridge', command=lambda: controller.show_frame("Dashboard"))
-        # using place for the button ensures it is always in the correct position in the bottom right corner
+        self.button1 = Button(
+            self,
+            text='🏠︎Back to Dashboard',
+            bg="lightblue",
+            fg='black',
+            font=("Courier", 10),
+            borderwidth=2,
+            relief='ridge',
+            command=lambda: controller.show_frame("Dashboard")
+        )
         self.button1.place(relx=1, rely=1, x=-10, y=-10, anchor='se')
 
-        # Load backend data
         self.load_data()
 
+    # Normalizer now includes cost
     def _normalize_stats(self, raw):
-        """
-        Accept either an object with get_stats() or a dict and return a dict with normalized keys.
-        Normalized keys returned: id, title, author, year, genres
-        """
-        stats = {}
-        if hasattr(raw, "get_stats") and callable(raw.get_stats):
-            stats = raw.get_stats()
-        elif isinstance(raw, dict):
-            stats = raw
-        else:
-            return None
+        stats = raw if isinstance(raw, dict) else raw.get_stats()
 
-        # Try multiple possible key names
-        id_val = stats.get("ID") or stats.get("id") or stats.get("Id") or ""
-        title = stats.get("name") or stats.get("title") or ""
+        id_val = stats.get("ID") or stats.get("id") or stats.get("Id")
+        title = stats.get("title") or stats.get("name") or ""
         author = stats.get("author") or ""
-        year = stats.get("publish_date") or stats.get("publish_year") or stats.get("year") or ""
-        genres = stats.get("genre_tags") or stats.get("genres") or stats.get("genre") or []
+        year = stats.get("year") or stats.get("publish_year") or ""
+        genres = stats.get("genres") or stats.get("genre") or []
+        cost = stats.get("cost") or stats.get("price") or ""
+
         if isinstance(genres, str):
-            genres_list = [g.strip() for g in genres.split(",") if g.strip()]
-        else:
-            try:
-                genres_list = list(genres)
-            except Exception:
-                genres_list = []
+            genres = [g.strip() for g in genres.split(",")]
+
+        if genres is None:
+            genres = []
 
         return {
             "id": id_val,
             "title": title,
             "author": author,
             "year": year,
-            "genres": genres_list
+            "genres": genres,
+            "cost": cost
         }
 
     def load_data(self):
-        # Clear the tree
         for row in self.tree.get_children():
             self.tree.delete(row)
 
-        # Get books; fall back to an empty list if method missing
-        books = []
         try:
-            books = self.controller.library.stats_inventory() or []
-        except Exception:
-            try:
-                books = self.controller.library.get_all_books() or []
-            except Exception:
-                books = []
+            books = self.controller.library.stats_inventory()
+        except:
+            books = {}
 
         for book_id, book in books.items():
             normalized = self._normalize_stats(book)
-            if not normalized:
-                continue
-            id_val = normalized["id"]
-            title = normalized["title"]
-            author = normalized["author"]
-            year = normalized["year"]
-            genres = ", ".join(normalized["genres"])
-            # Insert consistent number of values matching columns
-            self.tree.insert("", "end", values=(id_val, title, author, year, genres))
+            self.tree.insert(
+                "",
+                "end",
+                values=(
+                    normalized["id"],
+                    normalized["title"],
+                    normalized["author"],
+                    normalized["year"],
+                    ", ".join(normalized["genres"]),
+                    normalized["cost"]
+                )
+            )
 
     def search_book(self):
         keyword = self.search_entry.get().strip().lower()
@@ -181,31 +184,19 @@ class ViewInventoryPage(Frame):
             self.load_data()
             return
 
-        # Use the same data source as load_data
-        books = []
         try:
-            books = self.controller.library.stats_inventory() or []
-        except Exception:
-            try:
-                books = self.controller.library.get_all_books() or []
-            except Exception:
-                books = []
+            books = self.controller.library.stats_inventory()
+        except:
+            books = {}
 
         filtered = []
-        for book_id, book_obj in books.items():
-            normalized = self._normalize_stats(book_obj)
-            if not normalized:
-                continue
-            combined = " ".join([
-                str(normalized["title"]),
-                str(normalized["author"]),
-                str(normalized["year"]),
-                " ".join(normalized["genres"])
-            ]).lower()
-            if keyword in combined:
-                filtered.append(normalized)
 
-        # Refresh tree with filtered results
+        for book_id, book_obj in books.items():
+            n = self._normalize_stats(book_obj)
+            combined = f"{n['title']} {n['author']} {n['year']} {' '.join(n['genres'])}".lower()
+            if keyword in combined:
+                filtered.append(n)
+
         for row in self.tree.get_children():
             self.tree.delete(row)
 
@@ -218,7 +209,8 @@ class ViewInventoryPage(Frame):
                     b["title"],
                     b["author"],
                     b["year"],
-                    ", ".join(b["genres"])
+                    ", ".join(b["genres"]),
+                    b["cost"]
                 )
             )
 
@@ -228,114 +220,84 @@ class ViewInventoryPage(Frame):
             messagebox.showwarning("No selection", "Select a book to edit.")
             return
 
-        old_values = self.tree.item(sel[0])["values"]
-        # Expect ordering: ID, Title, Author, Year, Genre
-        book_id = old_values[0]
-        old_title = old_values[1]
-        old_author = old_values[2]
-        old_year = old_values[3]
-        old_genres = old_values[4] if len(old_values) > 4 else ""
+        old = self.tree.item(sel[0])["values"]
+        book_id, old_title, old_author, old_year, old_genres, old_cost = old
 
         form = Toplevel(self)
         form.title("Edit Book")
-        form.geometry("400x320")
+        form.geometry("400x360")
         form.config(bg="white")
 
-        fields = ["Title", "Author", "Year", "Genre"]
+        fields = ["Title", "Author", "Year", "Genre", "Cost"]
         entries = {}
+        initial = [old_title, old_author, old_year, old_genres, old_cost]
 
-        initial = [old_title, old_author, old_year, old_genres]
-
-        for i, field in enumerate(fields):
-            Label(form, text=field + ":", bg="white", font=("Courier", 11))\
+        for i, f in enumerate(fields):
+            Label(form, text=f + ":", bg="white", font=("Courier", 11))\
                 .grid(row=i, column=0, padx=10, pady=8, sticky="e")
-            entry = Entry(form, font=("Courier", 11), width=30)
-            entry.insert(0, initial[i])
-            entry.grid(row=i, column=1, pady=8)
-            entries[field] = entry
+            e = Entry(form, font=("Courier", 11), width=30)
+            e.insert(0, initial[i])
+            e.grid(row=i, column=1, pady=8)
+            entries[f] = e
 
         def save():
-            new_values = [entries[f].get().strip() for f in fields]
-            if any(v == "" for v in new_values):
+            vals = [entries[f].get().strip() for f in fields]
+            if any(v == "" for v in vals):
                 messagebox.showerror("Error", "All fields required.")
                 return
 
-            new_title, new_author, new_year, new_genres = new_values
-            # Update treeview
-            self.tree.item(sel[0], values=(book_id, new_title, new_author, new_year, new_genres))
+            new_title, new_author, new_year, new_genres, new_cost = vals
 
-            # Try to update backend if an update method exists; be tolerant if not present
+            self.tree.item(sel[0], values=(
+                book_id, new_title, new_author, new_year, new_genres, new_cost
+            ))
+
             try:
-                # common names tried: update_book(id, data) or update_book_by_id(id, data)
                 data = {
                     "title": new_title,
                     "author": new_author,
                     "publish_year": new_year,
-                    "genres": [g.strip() for g in new_genres.split(",") if g.strip()]
+                    "genres": [g.strip() for g in new_genres.split(",")],
+                    "cost": new_cost
                 }
                 if hasattr(self.controller.library, "update_book"):
-                    # signature might differ; many libraries accept (id, data)
-                    try:
-                        self.controller.library.update_book(book_id, data)
-                    except TypeError:
-                        # maybe expects (title, ...) — ignore if mismatch
-                        pass
-                elif hasattr(self.controller.library, "update_book_by_id"):
-                    self.controller.library.update_book_by_id(book_id, data)
-            except Exception:
-                # Don't crash on backend update failures; show a non-fatal warning
-                messagebox.showinfo("Note", "Local view updated. Backend update could not be completed automatically.")
-            finally:
-                form.destroy()
+                    self.controller.library.update_book(book_id, data)
+            except:
+                messagebox.showinfo("Note", "Local updated; backend may not have.")
+
+            form.destroy()
+            self.load_data()
 
         Button(
             form, text="Save Changes",
             bg="lightblue", fg="black",
             font=("Courier", 10),
-            borderwidth=2, relief="ridge",
+            borderwidth=2, relief='ridge',
             command=save
         ).grid(row=len(fields), column=0, columnspan=2, pady=15)
 
     def delete_selected(self):
-        selected = self.tree.selection()
+        sel = self.tree.selection()
 
-        if not selected:
+        if not sel:
             messagebox.showwarning("Warning", "Please select a book to delete.")
             return
 
-        values = self.tree.item(selected[0], "values")
-        # values ordering: ID, Title, Author, Year, Genre
-        book_id = values[0] if len(values) > 0 else None
-        book_title = values[1] if len(values) > 1 else ""
+        values = self.tree.item(sel[0], "values")
+        book_id = values[0]
+        book_title = values[1]
 
-        # Ask for confirmation
         if not messagebox.askyesno("Confirm Delete", f"Delete '{book_title}'?"):
             return
 
-        # Try to delete by id if possible, otherwise try by title
         try:
-            if book_id:
-                # Try common delete method names; be tolerant if not present
-                if hasattr(self.controller.library, "delete_book_by_id"):
-                    self.controller.library.delete_book_by_id(book_id)
-                elif hasattr(self.controller.library, "delete_book"):
-                    # delete_book might accept id or title; try id then title
-                    try:
-                        self.controller.library.delete_book(book_id)
-                    except Exception:
-                        self.controller.library.delete_book(book_title)
-                else:
-                    # last resort: try delete_book with title
-                    if hasattr(self.controller.library, "delete_by_title"):
-                        self.controller.library.delete_by_title(book_title)
+            if hasattr(self.controller.library, "delete_book_by_id"):
+                self.controller.library.delete_book_by_id(book_id)
             else:
-                # no id available
-                if hasattr(self.controller.library, "delete_book"):
-                    self.controller.library.delete_book(book_title)
-        except Exception:
-            # Don't crash; notify user
-            messagebox.showwarning("Warning", "Book removal attempted, but backend deletion may have failed.")
+                self.controller.library.delete_book(book_title)
+        except:
+            pass
 
-        # Remove from view and inform user
-        self.tree.delete(selected[0])
-        messagebox.showinfo("Deleted", f"'{book_title}' was removed from inventory (view updated).")
+        self.tree.delete(sel[0])
+        messagebox.showinfo("Deleted", f"'{book_title}' removed.")
+        self.load_data()
