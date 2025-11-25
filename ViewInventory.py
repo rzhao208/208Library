@@ -2,7 +2,6 @@ from tkinter import *
 from tkinter import ttk, messagebox
 from PIL import Image, ImageTk
 
-
 class LibraryInventory(Frame):
     def __init__(self, parent, controller):
         Frame.__init__(self, parent, bg="white")
@@ -82,7 +81,7 @@ class LibraryInventory(Frame):
         hsb.pack(side="bottom", fill="x")
         self.tree.pack(fill="both", expand=True)
 
-        # TREEVIEW STYLING — BLACK HEADER TEXT
+        # TREEVIEW STYLE — FIX HEADER TEXT COLOR
         style = ttk.Style()
         style.configure("Treeview",
                         background="black",
@@ -100,9 +99,9 @@ class LibraryInventory(Frame):
         widths = {
             "ID": 60,
             "Title": 250,
-            "Author": 200,
+            "Author": 180,
             "Year": 120,
-            "Genre": 250,
+            "Genre": 230,
             "Cost": 100
         }
 
@@ -144,26 +143,25 @@ class LibraryInventory(Frame):
         )
         delete_btn.grid(row=0, column=2, padx=20)
 
-        # Initial load
+        # Load books at start
         self.load_inventory()
 
     # ============================= LOAD INVENTORY =============================
     def load_inventory(self):
         self.tree.delete(*self.tree.get_children())
-        inventory = self.controller.library.stats_inventory()
+        library = self.controller.library.get_all_books()  # Must return dict
 
-        for book_id, book in inventory.items():
-            stats = book.get_stats()
+        for book_id, data in library.items():
             self.tree.insert(
                 "",
                 "end",
                 values=(
-                    stats["ID"],
-                    stats["name"],
-                    stats["author"],
-                    stats["publish_date"],
-                    ", ".join(stats["genre_tags"]),
-                    stats["cost"]
+                    book_id,
+                    data.get("Title", ""),
+                    data.get("Author", ""),
+                    data.get("Year", ""),
+                    data.get("Genre", ""),
+                    data.get("Cost", "")
                 )
             )
 
@@ -172,30 +170,27 @@ class LibraryInventory(Frame):
         query = self.search_entry.get().lower()
         self.tree.delete(*self.tree.get_children())
 
-        inventory = self.controller.library.stats_inventory()
+        library = self.controller.library.get_all_books()
 
-        for _, book in inventory.items():
-            stats = book.get_stats()
-            text = json.dumps(stats).lower()
-
-            if query in text:
+        for book_id, data in library.items():
+            if query in str(data).lower():
                 self.tree.insert(
                     "",
                     "end",
                     values=(
-                        stats["ID"],
-                        stats["name"],
-                        stats["author"],
-                        stats["publish_date"],
-                        ", ".join(stats["genre_tags"]),
-                        stats["cost"]
+                        book_id,
+                        data.get("Title", ""),
+                        data.get("Author", ""),
+                        data.get("Year", ""),
+                        data.get("Genre", ""),
+                        data.get("Cost", "")
                     )
                 )
 
     # ============================= ADD BOOK =============================
     def add_book(self):
         self.controller.show_frame("AddBook")
-        self.after(250, self.load_inventory)
+        self.after(300, self.load_inventory)
 
     # ============================= DELETE BOOK =============================
     def delete_selected(self):
@@ -205,7 +200,7 @@ class LibraryInventory(Frame):
             return
 
         item = self.tree.item(selected[0])
-        book_id = item["values"][0]
+        book_id = int(item["values"][0])
 
         self.controller.library.delete_book(book_id)
         self.load_inventory()
@@ -218,48 +213,29 @@ class LibraryInventory(Frame):
             return
 
         item = self.tree.item(selected[0])
-        book_id = item["values"][0]
+        book_id = int(item["values"][0])
 
-        book = self.controller.library.inventory[str(book_id)]
-        stats = book.get_stats()
-
+        # Open editor window
         top = Toplevel(self)
-        top.title(f"Edit Book (ID {book_id})")
-        top.geometry("400x500")
+        top.title("Edit Book")
+        top.geometry("400x400")
 
-        # Form fields
-        fields = ["name", "author", "publish_date", "cost", "genre_tags"]
+        book = self.controller.library.get_book(book_id)
+
+        fields = ["Title", "Author", "Year", "Genre", "Cost"]
         entries = {}
 
-        for f in fields:
-            Label(top, text=f).pack()
+        for i, field in enumerate(fields):
+            Label(top, text=field).pack()
             e = Entry(top)
             e.pack()
-
-            if f == "genre_tags":
-                e.insert(0, ", ".join(stats[f]))
-            else:
-                e.insert(0, stats[f])
-
-            entries[f] = e
+            e.insert(0, book.get(field, ""))
+            entries[field] = e
 
         def save_changes():
-            new_name = entries["name"].get()
-            new_author = entries["author"].get()
-            new_year = entries["publish_date"].get()
-            new_cost = entries["cost"].get()
-            new_genre = [g.strip() for g in entries["genre_tags"].get().split(",") if g.strip()]
-
-            self.controller.library.edit_book(
-                book_id,
-                name=new_name,
-                author=new_author,
-                publish_date=new_year,
-                cost=new_cost,
-                genre=new_genre
-            )
-
+            new_data = {f: entries[f].get() for f in fields}
+            self.controller.library.update_book(book_id, new_data)
             self.load_inventory()
             top.destroy()
 
-        Button(top, text="Save Changes", bg="#c7e6fa", command=save_changes).pack(pady=15)
+        Button(top, text="Save Changes", bg="#c7e6fa", command=save_changes).pack(pady=10)
