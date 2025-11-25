@@ -159,8 +159,8 @@ class LibraryInventory(Frame):
                     book_id,
                     data.get("Title", ""),
                     data.get("Author", ""),
-                    data.get("Year", ""),
-                    data.get("Genre", ""),
+                    data.get("publish_date", ""),
+                    data.get("genre_tags", ""),
                     data.get("Cost", "")
                 )
             )
