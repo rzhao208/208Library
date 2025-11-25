@@ -48,6 +48,11 @@ class AddBookPage(Frame):
         Button(self, text="Return", bg="lightblue",
                command=self.confirm_return).grid(row=7, column=0, columnspan=2, pady=10)
 
+        # create a button to go back to the home screen
+        self.button1 = Button(self, text='🏠︎Back to Dashboard', bg="lightblue", fg='black', font=("Courier", 10),
+                              borderwidth=2, relief='ridge', command=lambda: controller.show_frame("Dashboard"))
+        self.button1.place(relx=1, rely=1, x=-10, y=-10, anchor='se')
+
 
     # Clear all fields
     def clear_fields(self):
@@ -57,17 +62,17 @@ class AddBookPage(Frame):
         self.cost_entry.delete(0, END)
         self.genre_entry.delete(0, END)
 
-    # Confirm cancel
+    #     # Asks whether they are sure they want to cancel
     def confirm_cancel(self):
         answer = messagebox.askyesno("Confirm Cancel", "Are you sure you want to cancel?")
         if answer:
             self.clear_fields()
 
-    # Confirm return to dashboard
+    #     # Asks whether they are sure they want to return
     def confirm_return(self):
         answer = messagebox.askyesno("Confirm Return", "Are you sure you want to return?")
         if answer:
-            self.controller.show_frame(Dashboard)
+            self.controller.show_frame("Dashboard")
 
     # Save Book
     def save_book(self):
@@ -89,5 +94,5 @@ class AddBookPage(Frame):
 
         messagebox.showinfo("Success", "Book saved successfully!")
 
-        # Clear ONLY fields (not layout)
+        # Clear fields 
         self.clear_fields()
