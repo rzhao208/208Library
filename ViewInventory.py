@@ -154,8 +154,8 @@ class ViewInventoryPage(Frame):
             "id": stats.get("id") or stats.get("ID") or 0,
             "title": stats.get("title") or stats.get("name") or "",
             "author": stats.get("author", ""),
-            "year": stats.get("year") or stats.get("publish_year") or "",
-            "genres": stats.get("genre") or stats.get("genres") or "",
+            "year": stats.get("year") or stats.get("publish_date") or "",
+            "genres": stats.get("genre_tags") or stats.get("genres") or "",
             "cost": stats.get("cost") or stats.get("price") or ""
         }
 
