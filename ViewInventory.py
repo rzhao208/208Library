@@ -1,265 +1,226 @@
-from tkinter import *
-from tkinter import ttk, messagebox
-from PIL import Image, ImageTk
+import shelve
+import pickle
+import json
+import dbm
 
 
-class LibraryInventory(Frame):
-    def __init__(self, parent, controller):
-        Frame.__init__(self, parent, bg="white")
-        self.controller = controller
+class Book:
+    """
+    A book object that holds info similar to a book irl
+    """
+    def __init__(self, name, author, publish_date, cost, ID, genre_tags=()):
+        """
+        name: name of the book
+        author: author of the book
+        publish_date: publish date of the book
+        cost: a generic cost value, I don't know what we will do with it
+        genre_tags: tags that can be searched through, default of (), pass through iterables
+        """
+        self.name = name
+        self.author = author
+        self.publish_date = publish_date
+        self.cost = cost
+        self.ID = ID
+        self.genre_tags = []
+        if genre_tags:
+            for i in genre_tags:
+                self.genre_tags.append(i)
 
-        # =============================== TITLE ===============================
-        title_frame = Frame(self, bg="white")
-        title_frame.pack(pady=20)
+    def __str__(self):
+        """
+        when using print() on a book object, it will return the following:
+        """
+        return (f"ID: {self.ID}, {self.name} by {self.author}. Published in {self.publish_date} and costs {self.cost}."
+                f"It is in the {self.genre_tags} genre(s)")
 
-        title_label = Label(
-            title_frame,
-            text="Library Inventory",
-            font=("Courier", 26, "bold"),
-            bg="#c7e6fa",
-            padx=40,
-            pady=8
-        )
-        title_label.pack()
+    def get_stats(self):
+        stats = {}
+        stats["name"] = self.name
+        stats["author"] = self.author
+        stats["publish_date"] = self.publish_date
+        stats["cost"] = self.cost
+        stats["ID"] = self.ID
+        stats["genre_tags"] = self.genre_tags
+        return stats
 
-        # ================= BACK TO DASHBOARD (TOP LEFT) =====================
-        back_btn = Button(
-            self,
-            text="🏠 Back to Dashboard",
-            font=("Courier", 12),
-            bg="#c7e6fa",
-            relief="flat",
-            command=lambda: controller.show_frame("Dashboard")
-        )
-        back_btn.place(x=10, y=10)
 
-        # =============================== SEARCH BAR ===============================
-        search_frame = Frame(self, bg="white")
-        search_frame.pack(pady=10)
+class Library:
+    def __init__(self, file_name):
+        """
+        shelve_file: a direct link to the shelf file on the computer (which by default is in the same folder as the program)
+        inventory: a dictionary that stores the same files as the shelf. It's basically a cache where changes are made before
+                the shelf gets updated in a single batch
+        filtered_inventory: a dictionary that stores a subset of the main inventory after applying search filters. Updated
+                after each time the apply_filter() function is called
+        current_ID: an internal counter for managing the IDs of books
+        """
+        self.shelve_file = shelve.open(file_name)
+        self.inventory = dict(self.shelve_file)
+        self.filtered_inventory = {}
+        self.current_ID = 0
 
-        Label(search_frame, text="Search:", bg="white", font=("Courier", 12)).grid(row=0, column=0)
+    def add_book(self, name, author, publish, cost, genre_tags=()):
+        # finds next free ID
+        if str(self.current_ID) in self.shelve_file:
+            while str(self.current_ID) in self.shelve_file:
+                self.current_ID += 1
+        new_book = Book(name, author, publish, cost, self.current_ID, genre_tags)
+        self.inventory[str(self.current_ID)] = new_book
+        self.shelve_file.update(self.inventory)
+        print(f"{new_book}. has been added to library")
 
-        self.search_entry = Entry(search_frame, font=("Courier", 12), width=50)
-        self.search_entry.grid(row=0, column=1, padx=10)
+    def delete_book(self, book_id):
+        try:
+            del self.shelve_file[str(book_id)]
+            del self.inventory[str(book_id)]
+            print(f"deleted book {book_id}")
+            return True
+        except:
+            print("delete attempt failed")
+            return False
 
-        search_icon = Image.open("search.png").resize((22, 22))
-        self.search_icon = ImageTk.PhotoImage(search_icon)
+    def print_books(self):
+        # prints all books out, use for debugging
+        for i in dict(self.shelve_file):
+            print(f'{dict(self.shelve_file)[i]}')
 
-        search_button = Button(
-            search_frame,
-            image=self.search_icon,
-            bg="#c7e6fa",
-            relief="flat",
-            command=self.search_book
-        )
-        search_button.grid(row=0, column=2)
+    def print_filtered_books(self):
+        for i in self.filtered_inventory:
+            print(f'{dict(self.shelve_file)[i]}')
 
-        clear_button = Button(
-            search_frame,
-            text="Clear",
-            width=10,
-            bg="#c7e6fa",
-            relief="flat",
-            command=self.load_inventory
-        )
-        clear_button.grid(row=0, column=3, padx=10)
+    def edit_book(self, book_id, name=False, author=False, publish_date=False, cost=False, genre=False):
+        # edits a book
+        if str(book_id) not in dict(self.shelve_file):
+            print("edit attempt failed, book not found in library")
+            return False
+        if name:
+            self.inventory[str(book_id)].name = name
+        if author:
+            self.inventory[str(book_id)].author = author
+        if publish_date:
+            self.inventory[str(book_id)].publish_date = publish_date
+        if cost:
+            self.inventory[str(book_id)].cost = cost
+        if genre:
+            self.inventory[str(book_id)].genre_tags = genre
+        self.shelve_file.update(self.inventory)
 
-        # =============================== TABLE ===============================
+    def apply_filter(self, name=False, author=False, publish=False, cost=False, genre_tags=False):
+        """
+        filters are used for searching
+        name filter: finds all books that include a certain substring
+        author filter: same as name filter but applies to authors
+        publish: finds books with matching publish dates
+        cost: finds books with matching costs
+        genre_tags: finds books with at least 1 matching genre tags
 
-        table_frame = Frame(self, bg="white")
-        table_frame.pack(fill="both", expand=True, padx=20, pady=10)
+        a book must pass all 6 filters to be eligible, although certain filters can be left
+        """
+        self.inventory = dict(self.shelve_file)
+        self.filtered_inventory = {}
+        for i in self.inventory:
+            valid = True
+            if name and not (name.lower() in self.inventory[i].name.lower()):
+                valid = False
+            if author and not (author.lower() in self.inventory[i].author.lower()):
+                valid = False
+            if publish and not (publish == self.inventory[i].publish_date):
+                valid = False
+            if cost and not (cost == self.inventory[i].cost):
+                valid = False
+            if genre_tags and not (len(list(set(genre_tags + self.inventory[i].genre_tags))) < len(genre_tags) + len(self.inventory[i].genre_tags)):
+                valid = False
+            if valid:
+                self.filtered_inventory[i] = self.inventory[i]
 
-        columns = ("ID", "Title", "Author", "Year", "Genre", "Cost")
+    def stats_tags(self, use_filter=False):
+        """
+        returns a dictionary with the keys being genre tags and the contents being an int indicating how many times that
+        genre tag appears
 
-        self.tree = ttk.Treeview(table_frame, columns=columns, show="headings")
+        by default, this searches through inventory (every book kept in this library), setting use_filter to True makes
+        it search through the filtered inventory instead
+        """
+        tags = {}
+        if use_filter:
+            pool = self.filtered_inventory
+        else:
+            pool = self.inventory
 
-        # Scrollbars
-        vsb = ttk.Scrollbar(table_frame, orient="vertical", command=self.tree.yview)
-        hsb = ttk.Scrollbar(table_frame, orient="horizontal", command=self.tree.xview)
-        self.tree.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
+        for i in pool:
+            for j in pool[i].genre_tags:
+                if j not in tags:
+                    tags[j] = 1
+                else:
+                    tags[j] += 1
+        return tags
 
-        vsb.pack(side="right", fill="y")
-        hsb.pack(side="bottom", fill="x")
-        self.tree.pack(fill="both", expand=True)
+    def stats_books(self, use_filter=False):
+        """
+        returns a dictionary with the keys being book titles and the contents being an int indicating how many times
+        that book appears
 
-        # TREEVIEW STYLING — BLACK HEADER TEXT
-        style = ttk.Style()
-        style.configure("Treeview",
-                        background="black",
-                        foreground="white",
-                        rowheight=28,
-                        font=("Courier", 12),
-                        fieldbackground="black")
+        by default, this searches through inventory (every book kept in this library), setting use_filter to True makes
+        it search through the filtered inventory instead
+        """
+        books = {}
+        if use_filter:
+            pool = self.filtered_inventory
+        else:
+            pool = self.inventory
 
-        style.configure("Treeview.Heading",
-                        background="#c7e6fa",
-                        foreground="black",
-                        font=("Courier", 12, "bold"))
-
-        # Column sizes
-        widths = {
-            "ID": 60,
-            "Title": 250,
-            "Author": 200,
-            "Year": 120,
-            "Genre": 250,
-            "Cost": 100
-        }
-
-        for col in columns:
-            self.tree.heading(col, text=col)
-            self.tree.column(col, width=widths[col], anchor="center")
-
-        # =============================== BUTTONS ===============================
-        btn_frame = Frame(self, bg="white")
-        btn_frame.pack(pady=20)
-
-        add_btn = Button(
-            btn_frame,
-            text="Add Book",
-            font=("Courier", 14),
-            bg="#c7e6fa",
-            relief="flat",
-            command=self.add_book
-        )
-        add_btn.grid(row=0, column=0, padx=20)
-
-        edit_btn = Button(
-            btn_frame,
-            text="Edit Selected",
-            font=("Courier", 14),
-            bg="#c7e6fa",
-            relief="flat",
-            command=self.edit_selected
-        )
-        edit_btn.grid(row=0, column=1, padx=20)
-
-        delete_btn = Button(
-            btn_frame,
-            text="Delete Selected",
-            font=("Courier", 14),
-            bg="#c7e6fa",
-            relief="flat",
-            command=self.delete_selected
-        )
-        delete_btn.grid(row=0, column=2, padx=20)
-
-        # Initial load
-        self.load_inventory()
-
-    # ============================= LOAD INVENTORY =============================
-    def load_inventory(self):
-        self.tree.delete(*self.tree.get_children())
-        inventory = self.controller.library.stats_inventory()
-
-        for book_id, book in inventory.items():
-            stats = book.get_stats()
-            self.tree.insert(
-                "",
-                "end",
-                values=(
-                    stats["ID"],
-                    stats["name"],
-                    stats["author"],
-                    stats["publish_date"],
-                    ", ".join(stats["genre_tags"]),
-                    stats["cost"]
-                )
-            )
-
-    # ============================= SEARCH BOOK =============================
-    def search_book(self):
-        query = self.search_entry.get().lower()
-        self.tree.delete(*self.tree.get_children())
-
-        inventory = self.controller.library.stats_inventory()
-
-        for _, book in inventory.items():
-            stats = book.get_stats()
-            text = json.dumps(stats).lower()
-
-            if query in text:
-                self.tree.insert(
-                    "",
-                    "end",
-                    values=(
-                        stats["ID"],
-                        stats["name"],
-                        stats["author"],
-                        stats["publish_date"],
-                        ", ".join(stats["genre_tags"]),
-                        stats["cost"]
-                    )
-                )
-
-    # ============================= ADD BOOK =============================
-    def add_book(self):
-        self.controller.show_frame("AddBook")
-        self.after(250, self.load_inventory)
-
-    # ============================= DELETE BOOK =============================
-    def delete_selected(self):
-        selected = self.tree.selection()
-        if not selected:
-            messagebox.showwarning("No selection", "Select a book to delete.")
-            return
-
-        item = self.tree.item(selected[0])
-        book_id = item["values"][0]
-
-        self.controller.library.delete_book(book_id)
-        self.load_inventory()
-
-    # ============================= EDIT BOOK =============================
-    def edit_selected(self):
-        selected = self.tree.selection()
-        if not selected:
-            messagebox.showwarning("No selection", "Select a book to edit.")
-            return
-
-        item = self.tree.item(selected[0])
-        book_id = item["values"][0]
-
-        book = self.controller.library.inventory[str(book_id)]
-        stats = book.get_stats()
-
-        top = Toplevel(self)
-        top.title(f"Edit Book (ID {book_id})")
-        top.geometry("400x500")
-
-        # Form fields
-        fields = ["name", "author", "publish_date", "cost", "genre_tags"]
-        entries = {}
-
-        for f in fields:
-            Label(top, text=f).pack()
-            e = Entry(top)
-            e.pack()
-
-            if f == "genre_tags":
-                e.insert(0, ", ".join(stats[f]))
+        for i in pool:
+            if pool[i].name not in books:
+                books[pool[i].name] = 1
             else:
-                e.insert(0, stats[f])
+                books[pool[i].name] += 1
+        return books
 
-            entries[f] = e
+    def stats_inventory(self, use_filter=False):
+        """
+        returns the inventory
 
-        def save_changes():
-            new_name = entries["name"].get()
-            new_author = entries["author"].get()
-            new_year = entries["publish_date"].get()
-            new_cost = entries["cost"].get()
-            new_genre = [g.strip() for g in entries["genre_tags"].get().split(",") if g.strip()]
+        by default, this returns inventory (every book kept in this library), setting use_filter to True makes
+        it return the filtered inventory instead
+        """
+        if use_filter:
+            return self.filtered_inventory
+        return self.inventory
 
-            self.controller.library.edit_book(
-                book_id,
-                name=new_name,
-                author=new_author,
-                publish_date=new_year,
-                cost=new_cost,
-                genre=new_genre
-            )
+    def stats_book_count(self, use_filter=False):
+        """
+        returns total number of books
 
-            self.load_inventory()
-            top.destroy()
+        by default, this searches through inventory (every book kept in this library), setting use_filter to True makes
+        it search through the filtered inventory instead
+        """
+        if use_filter:
+            return len(self.filtered_inventory)
+        else:
+            return len(self.inventory)
 
-        Button(top, text="Save Changes", bg="#c7e6fa", command=save_changes).pack(pady=15)
+    def create_sample(self):
+        """
+        creates a small sample of books based on wikipedia's all-time best-selling books section
+        """
+        self.add_book("A Tale of Two Cities", "Charles Dickens", 1859, 200, ["historical fiction"])
+        self.add_book("The Little Prince", "Antoine de Saint-Exupery", 1943, 200, ["fantasy"])
+        self.add_book("The Alchemist", "Paulo Coelho", 1988, 150, ["fantasy"])
+        self.add_book("Harry Potter and the Philosopher's Stone", "J. K. Rowling", 1997, 120, ["fantasy"])
+        self.add_book("And Then There Were None", "Agatha Christie", 1939, 100, ["mystery"])
+        self.add_book("Dream of the Red Chamber", "Cao Xueqin", 1791, 100, ["family saga"])
+        self.add_book("The Hobbit", "J. R. R. Tolkien", 1937, 100, ["fantasy", "children's fiction"])
+        self.add_book("Alice's Adventures in Wonderland", "Lewis Carroll", 1865, 100, ["fantasy", "absurdist fiction"])
+
+    def delete_all_books(self):
+        """
+        deletes all books
+        """
+        temp = dict(self.inventory)
+        for i in temp:
+            self.delete_book(i)
+
+
+
+
+
