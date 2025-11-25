@@ -1,241 +1,326 @@
 from tkinter import *
-from tkinter import ttk, messagebox
-from PIL import Image, ImageTk
+from tkinter import ttk, messagebox, Frame, Toplevel
 
-class LibraryInventory(Frame):
+
+class ViewInventoryPage(Frame):
+
     def __init__(self, parent, controller):
-        Frame.__init__(self, parent, bg="white")
+        super().__init__(parent, bg="white")
+
         self.controller = controller
 
-        # =============================== TITLE ===============================
-        title_frame = Frame(self, bg="white")
-        title_frame.pack(pady=20)
+        # Make frame resizable
+        self.grid_rowconfigure(2, weight=1)
+        self.grid_columnconfigure(0, weight=1)
 
         title_label = Label(
-            title_frame,
-            text="Library Inventory",
-            font=("Courier", 26, "bold"),
-            bg="#c7e6fa",
-            padx=40,
-            pady=8
-        )
-        title_label.pack()
-
-        # ================= BACK TO DASHBOARD (TOP LEFT) =====================
-        back_btn = Button(
             self,
-            text="🏠 Back to Dashboard",
+            text="Library Inventory",
+            font=("Courier", 18, "bold"),
+            bg="#c7e6fa",
+            width=22,
+            height=2,
+            relief="ridge"
+        )
+        title_label.grid(row=0, column=0, columnspan=4, pady=15)
+
+        Label(self, text="Search:", font=("Courier", 12), bg="white") \
+            .grid(row=1, column=0, sticky="e", padx=8)
+
+        self.search_entry = Entry(self, width=45, font=("Courier", 12), bg="black", fg="white")
+        self.search_entry.grid(row=1, column=1, padx=5, sticky="we")
+
+        search_btn = Button(
+            self,
+            text="🔍",
             font=("Courier", 12),
             bg="#c7e6fa",
-            relief="flat",
-            command=lambda: controller.show_frame("Dashboard")
-        )
-        back_btn.place(x=10, y=10)
-
-        # =============================== SEARCH BAR ===============================
-        search_frame = Frame(self, bg="white")
-        search_frame.pack(pady=10)
-
-        Label(search_frame, text="Search:", bg="white", font=("Courier", 12)).grid(row=0, column=0)
-
-        self.search_entry = Entry(search_frame, font=("Courier", 12), width=50)
-        self.search_entry.grid(row=0, column=1, padx=10)
-
-        search_icon = Image.open("search.png").resize((22, 22))
-        self.search_icon = ImageTk.PhotoImage(search_icon)
-
-        search_button = Button(
-            search_frame,
-            image=self.search_icon,
-            bg="#c7e6fa",
-            relief="flat",
             command=self.search_book
         )
-        search_button.grid(row=0, column=2)
+        search_btn.grid(row=1, column=2, padx=5)
 
-        clear_button = Button(
-            search_frame,
+        clear_btn = Button(
+            self,
             text="Clear",
-            width=10,
+            font=("Courier", 12),
             bg="#c7e6fa",
-            relief="flat",
-            command=self.load_inventory
+            command=self.load_data
         )
-        clear_button.grid(row=0, column=3, padx=10)
+        clear_btn.grid(row=1, column=3, padx=5)
 
-        # =============================== TABLE ===============================
-
-        table_frame = Frame(self, bg="white")
-        table_frame.pack(fill="both", expand=True, padx=20, pady=10)
-
+        # -----------------------------------------------------
+        #  TABLE WITH AUTO RESIZE + COST COLUMN
+        # -----------------------------------------------------
         columns = ("ID", "Title", "Author", "Year", "Genre", "Cost")
 
-        self.tree = ttk.Treeview(table_frame, columns=columns, show="headings")
+        self.tree = ttk.Treeview(
+            self,
+            columns=columns,
+            show="headings"
+        )
 
-        # Scrollbars
-        vsb = ttk.Scrollbar(table_frame, orient="vertical", command=self.tree.yview)
-        hsb = ttk.Scrollbar(table_frame, orient="horizontal", command=self.tree.xview)
+        # SCROLLBARS
+        vsb = Scrollbar(self, orient="vertical", command=self.tree.yview)
+        hsb = Scrollbar(self, orient="horizontal", command=self.tree.xview)
         self.tree.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
 
-        vsb.pack(side="right", fill="y")
-        hsb.pack(side="bottom", fill="x")
-        self.tree.pack(fill="both", expand=True)
+        self.tree.grid(row=2, column=0, columnspan=4, sticky="nsew", padx=20, pady=(10, 0))
+        vsb.grid(row=2, column=4, sticky="ns")
+        hsb.grid(row=3, column=0, columnspan=4, sticky="ew")
 
-        # TREEVIEW STYLE — FIX HEADER TEXT COLOR
+        # STYLE FIX → readable headings
         style = ttk.Style()
         style.configure("Treeview",
                         background="black",
                         foreground="white",
+                        fieldbackground="black",
                         rowheight=28,
-                        font=("Courier", 12),
-                        fieldbackground="black")
+                        font=("Courier", 12))
 
         style.configure("Treeview.Heading",
+                        font=("Courier", 12, "bold"),
                         background="#c7e6fa",
-                        foreground="black",
-                        font=("Courier", 12, "bold"))
+                        foreground="black")
 
-        # Column sizes
-        widths = {
-            "ID": 60,
-            "Title": 250,
-            "Author": 180,
-            "Year": 120,
-            "Genre": 230,
-            "Cost": 100
-        }
+        # COLUMN DEFINITIONS (wider for readability)
+        self.tree.column("ID", width=70, anchor="center")
+        self.tree.column("Title", width=250, anchor="center")
+        self.tree.column("Author", width=200, anchor="center")
+        self.tree.column("Year", width=100, anchor="center")
+        self.tree.column("Genre", width=300, anchor="center")
+        self.tree.column("Cost", width=120, anchor="center")
 
         for col in columns:
             self.tree.heading(col, text=col)
-            self.tree.column(col, width=widths[col], anchor="center")
 
-        # =============================== BUTTONS ===============================
-        btn_frame = Frame(self, bg="white")
-        btn_frame.pack(pady=20)
-
+        # -----------------------------------------------------
+        # BUTTONS
+        # -----------------------------------------------------
         add_btn = Button(
-            btn_frame,
+            self,
             text="Add Book",
-            font=("Courier", 14),
+            font=("Courier", 12),
             bg="#c7e6fa",
-            relief="flat",
-            command=self.add_book
+            width=15,
+            command=self.refresh_after_add
         )
-        add_btn.grid(row=0, column=0, padx=20)
+        add_btn.grid(row=4, column=0, pady=25)
 
         edit_btn = Button(
-            btn_frame,
+            self,
             text="Edit Selected",
-            font=("Courier", 14),
+            font=("Courier", 12),
             bg="#c7e6fa",
-            relief="flat",
-            command=self.edit_selected
+            width=15,
+            command=self.edit_selected_form
         )
-        edit_btn.grid(row=0, column=1, padx=20)
+        edit_btn.grid(row=4, column=1, pady=25)
 
         delete_btn = Button(
-            btn_frame,
+            self,
             text="Delete Selected",
-            font=("Courier", 14),
+            font=("Courier", 12),
             bg="#c7e6fa",
-            relief="flat",
+            width=15,
             command=self.delete_selected
         )
-        delete_btn.grid(row=0, column=2, padx=20)
+        delete_btn.grid(row=4, column=2, pady=25)
 
-        # Load books at start
-        self.load_inventory()
+        self.button1 = Button(
+            self,
+            text='🏠︎ Back to Dashboard',
+            bg="lightblue",
+            fg='black',
+            font=("Courier", 10),
+            borderwidth=2,
+            relief='ridge',
+            command=lambda: controller.show_frame("Dashboard")
+        )
+        self.button1.place(relx=1, rely=1, x=-10, y=-10, anchor='se')
 
-    # ============================= LOAD INVENTORY =============================
-    def load_inventory(self):
-        self.tree.delete(*self.tree.get_children())
-        library = self.controller.library.get_all_books()  # Must return dict
+        # Initial load
+        self.load_data()
 
-        for book_id, data in library.items():
+    # ---------------------------------------------------------
+    # NORMALIZE BACKEND DATA
+    # ---------------------------------------------------------
+    def _normalize_stats(self, raw):
+        if hasattr(raw, "get_stats"):
+            stats = raw.get_stats()
+        else:
+            stats = raw
+
+        return {
+            "id": stats.get("id") or stats.get("ID") or 0,
+            "title": stats.get("title") or stats.get("name") or "",
+            "author": stats.get("author", ""),
+            "year": stats.get("year") or stats.get("publish_year") or "",
+            "genres": stats.get("genre") or stats.get("genres") or "",
+            "cost": stats.get("cost") or stats.get("price") or ""
+        }
+
+    # ---------------------------------------------------------
+    # LOAD TABLE CONTENT
+    # ---------------------------------------------------------
+    def load_data(self):
+        for row in self.tree.get_children():
+            self.tree.delete(row)
+
+        try:
+            books = self.controller.library.stats_inventory()
+        except:
+            books = {}
+
+        for book_id, book in books.items():
+            b = self._normalize_stats(book)
+
+            # b["id"] may be 0 — DON'T FILTER IT OUT
             self.tree.insert(
                 "",
                 "end",
                 values=(
-                    book_id,
-                    data.get("Title", ""),
-                    data.get("Author", ""),
-                    data.get("Year", ""),
-                    data.get("Genre", ""),
-                    data.get("Cost", "")
+                    b["id"],
+                    b["title"],
+                    b["author"],
+                    b["year"],
+                    b["genres"],
+                    b["cost"]
                 )
             )
 
-    # ============================= SEARCH BOOK =============================
+    # ---------------------------------------------------------
+    # SEARCH
+    # ---------------------------------------------------------
     def search_book(self):
-        query = self.search_entry.get().lower()
-        self.tree.delete(*self.tree.get_children())
+        keyword = self.search_entry.get().strip().lower()
 
-        library = self.controller.library.get_all_books()
-
-        for book_id, data in library.items():
-            if query in str(data).lower():
-                self.tree.insert(
-                    "",
-                    "end",
-                    values=(
-                        book_id,
-                        data.get("Title", ""),
-                        data.get("Author", ""),
-                        data.get("Year", ""),
-                        data.get("Genre", ""),
-                        data.get("Cost", "")
-                    )
-                )
-
-    # ============================= ADD BOOK =============================
-    def add_book(self):
-        self.controller.show_frame("AddBook")
-        self.after(300, self.load_inventory)
-
-    # ============================= DELETE BOOK =============================
-    def delete_selected(self):
-        selected = self.tree.selection()
-        if not selected:
-            messagebox.showwarning("No selection", "Select a book to delete.")
+        if not keyword:
+            self.load_data()
             return
 
-        item = self.tree.item(selected[0])
-        book_id = int(item["values"][0])
+        try:
+            books = self.controller.library.stats_inventory()
+        except:
+            books = {}
 
-        self.controller.library.delete_book(book_id)
-        self.load_inventory()
+        for row in self.tree.get_children():
+            self.tree.delete(row)
 
-    # ============================= EDIT BOOK =============================
-    def edit_selected(self):
-        selected = self.tree.selection()
-        if not selected:
+        for book_id, book in books.items():
+            b = self._normalize_stats(book)
+
+            combo = f"{b['title']} {b['author']} {b['year']} {b['genres']} {b['cost']}".lower()
+
+            if keyword in combo:
+                self.tree.insert("", "end", values=(
+                    b["id"],
+                    b["title"],
+                    b["author"],
+                    b["year"],
+                    b["genres"],
+                    b["cost"]
+                ))
+
+    # ---------------------------------------------------------
+    # EDIT SELECTED
+    # ---------------------------------------------------------
+    def edit_selected_form(self):
+        sel = self.tree.selection()
+        if not sel:
             messagebox.showwarning("No selection", "Select a book to edit.")
             return
 
-        item = self.tree.item(selected[0])
-        book_id = int(item["values"][0])
+        values = self.tree.item(sel[0])["values"]
+        book_id, old_title, old_author, old_year, old_genres, old_cost = values
 
-        # Open editor window
-        top = Toplevel(self)
-        top.title("Edit Book")
-        top.geometry("400x400")
-
-        book = self.controller.library.get_book(book_id)
+        form = Toplevel(self)
+        form.title("Edit Book")
+        form.geometry("430x350")
+        form.config(bg="white")
 
         fields = ["Title", "Author", "Year", "Genre", "Cost"]
+        initial = [old_title, old_author, old_year, old_genres, old_cost]
         entries = {}
 
         for i, field in enumerate(fields):
-            Label(top, text=field).pack()
-            e = Entry(top)
-            e.pack()
-            e.insert(0, book.get(field, ""))
-            entries[field] = e
+            Label(form, text=field + ":", bg="white", font=("Courier", 11)) \
+                .grid(row=i, column=0, padx=10, pady=8, sticky="e")
 
-        def save_changes():
-            new_data = {f: entries[f].get() for f in fields}
-            self.controller.library.update_book(book_id, new_data)
-            self.load_inventory()
-            top.destroy()
+            entry = Entry(form, font=("Courier", 11), width=30)
+            entry.insert(0, initial[i])
+            entry.grid(row=i, column=1, pady=8)
+            entries[field] = entry
 
-        Button(top, text="Save Changes", bg="#c7e6fa", command=save_changes).pack(pady=10)
+        def save():
+            new_vals = [entries[f].get().strip() for f in fields]
+
+            if any(v == "" for v in new_vals):
+                messagebox.showerror("Error", "All fields required.")
+                return
+
+            new_title, new_author, new_year, new_genres, new_cost = new_vals
+
+            # Update TreeView
+            self.tree.item(sel[0], values=(
+                book_id, new_title, new_author, new_year, new_genres, new_cost
+            ))
+
+            # Update backend
+            try:
+                data = {
+                    "title": new_title,
+                    "author": new_author,
+                    "publish_year": new_year,
+                    "genres": new_genres,
+                    "cost": new_cost
+                }
+                if hasattr(self.controller.library, "update_book"):
+                    self.controller.library.update_book(book_id, data)
+
+            except Exception:
+                messagebox.showwarning("Warning", "Backend update may have failed.")
+
+            form.destroy()
+            self.load_data()
+
+        Button(
+            form, text="Save Changes",
+            bg="lightblue", fg="black",
+            font=("Courier", 10),
+            borderwidth=2, relief="ridge",
+            command=save
+        ).grid(row=len(fields), column=0, columnspan=2, pady=15)
+
+    # ---------------------------------------------------------
+    # DELETE SELECTED
+    # ---------------------------------------------------------
+    def delete_selected(self):
+        sel = self.tree.selection()
+        if not sel:
+            messagebox.showwarning("Warning", "Select a book to delete.")
+            return
+
+        values = self.tree.item(sel[0], "values")
+        book_id = values[0]
+        title = values[1]
+
+        if not messagebox.askyesno("Confirm", f"Delete '{title}'?"):
+            return
+
+        try:
+            if hasattr(self.controller.library, "delete_book_by_id"):
+                self.controller.library.delete_book_by_id(book_id)
+        except:
+            messagebox.showwarning("Warning", "Backend delete failed.")
+
+        self.load_data()
+
+    # ---------------------------------------------------------
+    # AUTO-REFRESH AFTER ADD BOOK
+    # ---------------------------------------------------------
+    def refresh_after_add(self):
+        # open add book page normally
+        self.controller.show_frame("AddBookPage")
+
+        # refresh when page returns
+        self.after(300, self.load_data)
