@@ -177,7 +177,7 @@ class AddBookPage(Frame):
     def confirm_return(self):
         answer = messagebox.askyesno("Confirm Return", "Are you sure you want to return?")
         if answer:
-            self.controller.show_frame(Dashboard)
+            self.controller.show_frame("Dashboard")
 
     # Save Book
     def save_book(self):
